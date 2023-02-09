@@ -1,0 +1,22 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=fallback");
+
+/* @tailwind base;
+@tailwind components;
+
+@tailwind utilities; */
+
+/* Additional styles */
+@import "additional-styles/utility-patterns.css";
+@import "additional-styles/range-slider.css";
+@import "additional-styles/toggle-switch.css";
+/* @import "additional-styles/flatpickr.css"; */
+@import "additional-styles/theme.css";
+
+.form-input,
+.form-textarea,
+.form-multiselect,
+.form-select,
+.form-checkbox,
+.form-radio {
+  @apply text-indigo-500 border border-slate-300;
+}

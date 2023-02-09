@@ -8,14 +8,16 @@ generator client {
 }
 
 model User {
-  id    String @id @default(cuid())
-  email String @unique
+  id    String  @id @default(cuid())
+  email String  @unique
+  name  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   password Password?
   notes    Note[]
+  Profile  Profile?
 }
 
 model Password {
@@ -35,4 +37,40 @@ model Note {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
+}
+
+model Profile {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  birthday       DateTime
+  gender         String?
+  preference     String?
+  location       String?
+  profile_pic_id String?
+  facebook_url   String?
+  name           String
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String   @unique
+
+  // indices
+  @@index([gender])
+  @@index([preference])
+}
+
+model Status {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lat         Float
+  long        Float
+  date        DateTime
+  text        String
+  age         Int
+  preference  String?
+  reply_count Int      @default(0)
+  like_count  Int      @default(0)
+
+  @@index([lat, long, date])
+  @@index([age, preference])
 }
