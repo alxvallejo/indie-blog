@@ -16,6 +16,7 @@ model User {
 
   password Password?
   notes    Note[]
+  Question Question[]
 }
 
 model Password {
@@ -32,6 +33,29 @@ model Note {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+}
+
+model Choice {
+  id    String @id @default(cuid())
+  title String
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  Question   Question? @relation(fields: [questionId], references: [id])
+  questionId String?
+}
+
+model Question {
+  id    String @id @default(cuid())
+  title String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  choices Choice[]
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String

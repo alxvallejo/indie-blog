@@ -1,6 +1,11 @@
 import { Link } from "@remix-run/react";
-
+import type { LinksFunction } from "@remix-run/node";
+import stylesUrl from "~/styles/index.css";
 import { useOptionalUser } from "~/utils";
+
+export const links: LinksFunction = () => {
+  return [{ rel: "stylesheet", href: stylesUrl }];
+};
 
 export default function Index() {
   const user = useOptionalUser();
