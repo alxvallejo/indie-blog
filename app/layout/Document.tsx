@@ -3,19 +3,23 @@ import { json } from "@remix-run/node";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 
 import { requireUserId } from "~/session.server";
-import { useUser } from "~/utils";
+import { useOptionalUser } from "~/utils";
 import { getNoteListItems } from "~/models/note.server";
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await requireUserId(request);
+  console.log("userId: ", userId);
   const noteListItems = await getNoteListItems({ userId });
+  console.log("noteListItems: ", noteListItems);
   return json({ noteListItems });
 }
 
-export default function NotesPage() {
+export default function Layout({ children }) {
   const data = useLoaderData<typeof loader>();
-  const user = useUser();
-
+  const user = useOptionalUser();
+  if (!user) {
+    return <>{children}</>;
+  }
   return (
     <div className="flex h-full min-h-screen flex-col">
       <header className="flex items-center justify-between bg-slate-800 p-4 text-white">
@@ -61,9 +65,7 @@ export default function NotesPage() {
           )}
         </div>
 
-        <div className="flex-1 p-6">
-          <Outlet />
-        </div>
+        <div className="flex-1 p-6">{children}</div>
       </main>
     </div>
   );

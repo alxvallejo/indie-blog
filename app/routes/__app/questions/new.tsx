@@ -3,7 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
 import * as React from "react";
 
-import { createNote } from "~/models/note.server";
+import { createQuestion } from "~/models/question.server";
 import { requireUserId } from "~/session.server";
 
 export async function action({ request }: ActionArgs) {
@@ -11,7 +11,7 @@ export async function action({ request }: ActionArgs) {
 
   const formData = await request.formData();
   const title = formData.get("title");
-  const body = formData.get("body");
+  const choices = formData.get("choices");
 
   if (typeof title !== "string" || title.length === 0) {
     return json(
@@ -20,19 +20,19 @@ export async function action({ request }: ActionArgs) {
     );
   }
 
-  if (typeof body !== "string" || body.length === 0) {
+  if (!choices || choices.length <= 3) {
     return json(
-      { errors: { title: null, body: "Body is required" } },
+      { errors: { title: null, body: "At least 4 choices are required" } },
       { status: 400 }
     );
   }
 
-  const note = await createNote({ title, body, userId });
+  const question = await createQuestion({ title, choices, userId });
 
-  return redirect(`/notes/${note.id}`);
+  return redirect(`/questions/${question.id}`);
 }
 
-export default function NewNotePage() {
+export default function NewQuestionPage() {
   const actionData = useActionData<typeof action>();
   const titleRef = React.useRef<HTMLInputElement>(null);
   const bodyRef = React.useRef<HTMLTextAreaElement>(null);
@@ -61,7 +61,7 @@ export default function NewNotePage() {
           <input
             ref={titleRef}
             name="title"
-            className="flex-1 rounded-md border-2 border-blue-500 px-3 text-lg leading-loose"
+            className="flex-1 rounded-md px-3 text-lg leading-loose"
             aria-invalid={actionData?.errors?.title ? true : undefined}
             aria-errormessage={
               actionData?.errors?.title ? "title-error" : undefined
@@ -82,7 +82,7 @@ export default function NewNotePage() {
             ref={bodyRef}
             name="body"
             rows={8}
-            className="w-full flex-1 rounded-md border-2 border-blue-500 py-2 px-3 text-lg leading-6"
+            className="w-full flex-1 rounded-md py-2 px-3 text-lg leading-6"
             aria-invalid={actionData?.errors?.body ? true : undefined}
             aria-errormessage={
               actionData?.errors?.body ? "body-error" : undefined
@@ -97,10 +97,7 @@ export default function NewNotePage() {
       </div>
 
       <div className="text-right">
-        <button
-          type="submit"
-          className="rounded bg-blue-500 py-2 px-4 text-white hover:bg-blue-600 focus:bg-blue-400"
-        >
+        <button type="submit" className="btn-outline btn">
           Save
         </button>
       </div>
