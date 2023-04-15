@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { themeChange } from "theme-change";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
@@ -15,24 +17,67 @@ export async function loader({ request }: LoaderArgs) {
 export default function Layout() {
   const data = useLoaderData<typeof loader>();
   const user = useUser();
+
+  useEffect(() => {
+    themeChange(false);
+    const savedTheme = window.localStorage.getItem("theme");
+    if (savedTheme) {
+      const body = document.body;
+      body.setAttribute("data-theme", savedTheme);
+    }
+  }, []);
+
+  const handleThemeChange = (theme: string) => {
+    const body = document.body;
+    body.setAttribute("data-theme", theme);
+    window.localStorage.setItem("theme", theme);
+  };
+
   return (
     <div className="flex h-full min-h-screen flex-col">
-      <header className="flex items-center justify-between bg-slate-800 p-4 text-white">
-        <h1 className="text-3xl">
-          <Link to=".">
-            <div className="font-title inline-flex text-lg text-primary transition-all duration-200 md:text-3xl">
-              <span className="lowercase">Bowst</span>{" "}
-              <span className="font-bold text-base-content">Standup</span>
+      <div className="navbar">
+        <div className="flex-1 px-2 lg:flex-none">
+          <h1 className="text-3xl">
+            <Link to=".">
+              <div className="font-title inline-flex text-lg text-primary transition-all duration-200 md:text-3xl">
+                <span className="lowercase">Bowst</span>{" "}
+                <span className="font-bold text-base-content">Standup</span>
+              </div>
+            </Link>
+          </h1>
+        </div>
+        <div className="flex flex-1 justify-end px-2">
+          <div className="flex items-center">
+            <div>{user.email}</div>
+
+            <div className="dropdown-end dropdown">
+              <label tabIndex={0} className="btn-ghost rounded-btn btn">
+                Theme
+              </label>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu rounded-box mt-4 w-52 p-2 "
+              >
+                <li onClick={() => handleThemeChange("business")}>
+                  <button className="btn-ghost btn">Business</button>
+                </li>
+                <li onClick={() => handleThemeChange("cyberpunk")}>
+                  <button className="btn-ghost btn">Cyberpunk</button>
+                </li>
+                <li onClick={() => handleThemeChange("cmyk")}>
+                  <button className="btn-ghost btn">CMYK</button>
+                </li>
+              </ul>
             </div>
-          </Link>
-        </h1>
-        <p>{user.email}</p>
-        <Form action="/logout" method="post">
-          <button type="submit" className="rounded py-2 px-4">
-            Logout
-          </button>
-        </Form>
-      </header>
+          </div>
+
+          <Form action="/logout" method="post">
+            <button type="submit" className="rounded py-2 px-4">
+              Logout
+            </button>
+          </Form>
+        </div>
+      </div>
 
       <main className="flex h-full">
         {/* <div className="h-full w-80 border-r bg-gray-50">
