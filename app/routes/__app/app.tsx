@@ -12,7 +12,7 @@ export async function loader({ request }: LoaderArgs) {
   return json({ noteListItems });
 }
 
-export default function NotesPage() {
+export default function Main() {
   const data = useLoaderData<typeof loader>();
   const user = useUser();
 

@@ -38,10 +38,20 @@ model Note {
   userId String
 }
 
-model Choice {
+model Category {
   id    String @id @default(cuid())
-  title String
-  answer  Boolean @default(false)
+  title String @unique
+  color String
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Question  Question[]
+}
+
+model Choice {
+  id     String  @id @default(cuid())
+  title  String
+  answer Boolean @default(false)
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -57,6 +67,9 @@ model Question {
   updatedAt DateTime @updatedAt
 
   choices Choice[]
+
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String

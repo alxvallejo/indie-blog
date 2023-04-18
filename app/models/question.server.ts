@@ -1,8 +1,6 @@
-import type { User, Question } from "@prisma/client";
+import type { User, Question, Choice } from "@prisma/client";
 
 import { prisma } from "~/db.server";
-
-export type { Question, Choice } from "@prisma/client";
 
 export function getQuestion({
   id,
@@ -24,7 +22,13 @@ export function getQuestions({ userId }: { userId: User["id"] }) {
   });
 }
 
-export function createQuestion({ title, choices, userId }) {
+export function createQuestion({
+  title,
+  choices,
+  userId,
+}: Pick<Question, "title"> & {
+  userId: User["id"];
+} & { choices: Pick<Choice, "title" | "answer"> }) {
   return prisma.question.create({
     data: {
       title,
