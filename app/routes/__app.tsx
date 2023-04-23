@@ -132,6 +132,9 @@ export default function Layout() {
               <li>
                 <Link to="/notes">Notes</Link>
               </li>
+              <li>
+                <Link to="/trivia">Trivia</Link>
+              </li>
             </ul>
           </div>
         </div>
