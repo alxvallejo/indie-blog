@@ -19,6 +19,7 @@ export async function loader({ request }: LoaderArgs) {
 export default function TriviaIndex() {
   const user = useUser();
   const [userData, setUserData] = useState();
+  const [signedIn, setSignedIn] = useState(false);
   const [players, setPlayers] = useState([]);
   const { wsUrl } = useLoaderData<typeof loader>();
 
@@ -36,14 +37,13 @@ export default function TriviaIndex() {
       },
       onMessage: (e) => {
         const msg = JSON.parse(e.data);
+        console.log("msg: ", msg);
         if (!msg.type) {
-          console.log("msg: ", msg);
           return;
         }
         switch (msg.type) {
           case "players":
             setPlayers(msg.data);
-
           default:
             return;
         }
@@ -71,6 +71,15 @@ export default function TriviaIndex() {
   }, [user]);
 
   useEffect(() => {
+    console.log('players: ', players);
+    if (players && players.find(x => x.email == user.email)) {
+      setSignedIn(true)
+    } else {
+      setSignedIn(false)
+    }
+  }, [players])
+
+  useEffect(() => {
     console.log("readyState: ", readyState);
     if (readyState == 1) {
       sendJsonMessage({ message: "test" });
@@ -88,19 +97,46 @@ export default function TriviaIndex() {
     }
   };
 
+  const startTriviaCard = () => {
+    return (
+      <div className="card glass w-96">
+        <div className="card-body">
+          <h2 className="card-title">Bowpourri</h2>
+          <div className="card-actions justify-end">
+            <button onClick={handleSignIn} className="btn-primary btn">
+              Start!
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const statusCard = () => {
+    if (players.length < 3) {
+      return (<div className="card glass w-96">
+          <div className="card-body">
+            <h2 className="card-title">Waiting for more players...</h2>
+          </div>
+        </div>)
+    } else {
+      return (<div className="card glass w-96">
+          <div className="card-body">
+            <h2 className="card-title">Let the game begin!</h2>
+          </div>
+        </div>)
+    }
+  }
+
   return (
     <div className="container">
       <div className="flex justify-between">
-        <div className="card glass w-96">
-          <div className="card-body">
-            <h2 className="card-title">Bowpourri</h2>
-            <div className="card-actions justify-end">
-              <button onClick={handleSignIn} className="btn-primary btn">
-                Start!
-              </button>
-            </div>
-          </div>
-        </div>
+        {!signedIn ? (
+          {startTriviaCard()}
+        ) : (
+          {statusCard()}
+        )}
+        
         <div className="card glass w-96">
           <div className="card-body">
             <h2 className="card-title">Players</h2>
