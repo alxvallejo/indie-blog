@@ -174,7 +174,7 @@ export default function TriviaIndex() {
   };
 
   const CategoryCard = ({ category }) => {
-    const className = `btn btn-outline ${category.class}`;
+    const className = `btn btn-outline ${category.class} m-2`;
     const isDisabled = !!selectedCategory;
     return (
       <button
@@ -209,7 +209,7 @@ export default function TriviaIndex() {
       return (
         <div>
           Choose a category:
-          <div className="flex flex-row justify-between">
+          <div className="flex flex-row flex-wrap justify-between">
             {filteredCategories.map((cat, i) => {
               return <CategoryCard key={i} category={cat} />;
             })}
