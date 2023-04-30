@@ -13,7 +13,7 @@ import {
 
 import io from "socket.io-client";
 
-const socket = io.connect("http://localhost:4000");
+const socket = io.connect("https://lionfish-app-si2ii.ondigitalocean.app");
 
 // const wsUrl = process.env.WEBSOCKET_API || "";
 // const wsUrl = "wss://lionfish-app-si2ii.ondigitalocean.app";
