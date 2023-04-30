@@ -5,6 +5,11 @@ import { fetchNewGame } from "~/services/bowpourri";
 import { requireUserId } from "~/session.server";
 import { useUser } from "~/utils";
 import Countdown from "react-countdown";
+import {
+  CheckIcon,
+  CheckBadgeIcon,
+  FaceFrownIcon,
+} from "@heroicons/react/24/solid";
 
 import io from "socket.io-client";
 
@@ -96,10 +101,6 @@ export default function TriviaIndex() {
     }
   }, [players]);
 
-  // const handleNewGame = async () => {
-  //   const resp = await fetchNewGame();
-  // };
-
   useEffect(() => {
     if (selectedOption) {
       socket.emit("answer", selectedOption);
@@ -170,37 +171,6 @@ export default function TriviaIndex() {
         <Countdown date={Date.now() + ms} renderer={handleCountdown} />
       </div>
     );
-    // if (newGame) {
-    //   return (
-    //     <div className="flex flex-col content-start">
-    //       Today's question:
-    //       <h3>{newGame.question}</h3>
-    //       {newGame.options.map((option, i) => {
-    //         return (
-    //           <div className="form-control flex-initial" key={i}>
-    //             <label className="label cursor-pointer">
-    //               <span className="label-text">{option}</span>
-    //               <input
-    //                 type="radio"
-    //                 name="radio-10"
-    //                 className="radio checked:bg-blue-500"
-    //                 onChange={() => setSelectedOption(option)}
-    //                 checked={selectedOption == option}
-    //               />
-    //             </label>
-    //           </div>
-    //         );
-    //       })}
-    //     </div>
-    //   );
-    // } else {
-    //   console.log("newGame: ", newGame);
-    //   return (
-    //     <div>
-    //       <h2>The game will begin momentarily</h2>
-    //     </div>
-    //   );
-    // }
   };
 
   const CategoryCard = ({ category }) => {
@@ -228,6 +198,14 @@ export default function TriviaIndex() {
       const filteredCategories = selectedCategory
         ? categories.filter((x) => x.label === selectedCategory)
         : categories;
+      if (selectedCategory) {
+        return (
+          <div>
+            <h3>Today's Category:</h3>
+            <h2>{selectedCategory}</h2>
+          </div>
+        );
+      }
       return (
         <div>
           Choose a category:
@@ -242,10 +220,8 @@ export default function TriviaIndex() {
   };
 
   const handleAnswer = ({ seconds, completed }) => {
-    console.log("seconds: ", seconds);
     if (correctAnswer) {
       const isCorrect = correctAnswer.option == selectedOption;
-      console.log("isCorrect: ", isCorrect);
       if (isCorrect) {
         return (
           <div>
@@ -281,6 +257,27 @@ export default function TriviaIndex() {
 
   const unanswered = players.filter((x) => !x.answered);
 
+  const PlayerStatus = ({ player }) => {
+    const { email, answered, playerData } = player;
+    console.log("player: ", player);
+    let answerIcon;
+    if (correctAnswer) {
+      const isCorrect = correctAnswer.option == selectedOption;
+      if (isCorrect) {
+        answerIcon = <CheckBadgeIcon className="h-6 w-6 text-green-500" />;
+      } else {
+        answerIcon = <FaceFrownIcon className="text-warning-500 h-6 w-6" />;
+      }
+    } else if (answered) {
+      answerIcon = <CheckIcon className="h-6 w-6 text-green-500" />;
+    }
+    return (
+      <div className="flex">
+        {email} {answerIcon}
+      </div>
+    );
+  };
+
   return (
     <div className="container">
       <div className="flex flex-row justify-between">
@@ -301,7 +298,7 @@ export default function TriviaIndex() {
               {players.map((player, index) => {
                 return (
                   <li key={index}>
-                    {player.email} {player.answered ? ` Check` : ""}
+                    <PlayerStatus player={player} />
                   </li>
                 );
               })}
