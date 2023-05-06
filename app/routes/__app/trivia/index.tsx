@@ -12,18 +12,17 @@ import {
 } from "@heroicons/react/24/solid";
 
 import io from "socket.io-client";
-
-const socket = io.connect("https://lionfish-app-si2ii.ondigitalocean.app");
+const socket = io.connect("http://localhost:4000");
 
 // const wsUrl = process.env.WEBSOCKET_API || "";
 // const wsUrl = "wss://lionfish-app-si2ii.ondigitalocean.app";
 // const wsUrl = "wss://localhost:8000";
 
-// export async function loader({ request }: LoaderArgs) {
-//   // const userId = await requireUserId(request);
-//   const wsUrl = process.env.WEBSOCKET_API || "ws://localhost:8000";
-//   return json({ wsUrl });
-// }
+export async function loader({ request }: LoaderArgs) {
+  // const userId = await requireUserId(request);
+  const wsUrl = process.env.WEBSOCKET_API || "http://localhost:4000";
+  return json({ wsUrl });
+}
 
 const MIN_PLAYERS = 1;
 const COUNTDOWN_SECONDS = 5;
@@ -61,28 +60,58 @@ export default function TriviaIndex() {
   const [userData, setUserData] = useState();
   const [signedIn, setSignedIn] = useState(false);
   const [players, setPlayers] = useState([]);
+  console.log("players: ", players);
   const [selectedCategory, setSelectedCategory] = useState();
   const [yesterdaysWinner, setYesterdaysWinner] = useState();
   const [newGame, setNewGame] = useState();
+  const [newGameError, setNewGameError] = useState();
+  const [playerScoreError, setPlayerScoreError] = useState();
   const [selectedOption, setSelectedOption] = useState();
   const [countdownCompleted, setCountdownCompleted] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState();
-  // const [categories, setCategories] = useState([]);
-  // const [selectedCategory, setSelectedCa]
-  // const { wsUrl } = useLoaderData<typeof loader>();
+  const { wsUrl } = useLoaderData<typeof loader>();
+
+  // let socket;
+
+  const onSignOut = (socketId) => {
+    // Remove the corresponding player
+    const newPlayers = players.filter((x) => x.socketId !== socketId);
+    setPlayers(newPlayers);
+  };
 
   useEffect(() => {
+    if (!socket) {
+      return;
+    }
     socket.on("message", (msg) => {
       console.log("msg: ", msg);
     });
     socket.on("players", setPlayers);
     socket.on("category", setSelectedCategory);
     socket.on("newGame", setNewGame);
+    socket.on("newGameError", setNewGameError);
+    socket.on("playerScoreError", setPlayerScoreError);
     socket.on("answer", setCorrectAnswer);
+    socket.on("signOut", onSignOut);
+  }, [socket]);
+
+  useEffect(() => {
+    return () => {
+      console.log("Disconnect on tab close");
+      // Remove yourself from players list
+      console.log("userData on disconnect: ", userData);
+      socket.emit("signOut", userData?.email);
+      socket.off("players", setPlayers);
+      socket.off("category", setSelectedCategory);
+      socket.off("newGame", setNewGame);
+      socket.off("newGameError", setNewGameError);
+      socket.off("playerScoreError", setPlayerScoreError);
+      socket.off("answer", setCorrectAnswer);
+      socket.off("signOut", onSignOut);
+    };
   }, []);
 
   useEffect(() => {
-    // console.log("websocket url", getWebSocket().url);
     if (user) {
       console.log("user: ", user);
       setUserData({
@@ -102,16 +131,21 @@ export default function TriviaIndex() {
   }, [players]);
 
   useEffect(() => {
-    if (selectedOption) {
-      socket.emit("answer", selectedOption);
+    if (selectedOption && userData) {
+      socket.emit("answer", userData.email, selectedOption);
     }
-  }, [selectedOption]);
+  }, [selectedOption, userData]);
 
   const handleSignIn = () => {
     if (userData) {
       console.log("userData: ", userData);
       socket.emit("signIn", userData);
     }
+  };
+
+  const handleSignOut = () => {
+    console.log("userData: ", userData);
+    socket.emit("signOut", userData.email);
   };
 
   const StartTriviaCard = () => {
@@ -209,7 +243,7 @@ export default function TriviaIndex() {
       return (
         <div>
           Choose a category:
-          <div className="flex flex-row flex-wrap justify-between">
+          <div className="flex flex-row flex-wrap items-start">
             {filteredCategories.map((cat, i) => {
               return <CategoryCard key={i} category={cat} />;
             })}
@@ -280,8 +314,11 @@ export default function TriviaIndex() {
 
   return (
     <div className="container">
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-wrap justify-between">
         <div className="basis-3/4 pr-6">
+          <button className="btn-secondary btn" onClick={handleSignOut}>
+            Sign Out
+          </button>
           {!signedIn ? <StartTriviaCard /> : <StatusCard />}
           {selectedCategory ? <ShowQuestion /> : ""}
           {newGame && unanswered.length > 0 ? (
@@ -291,7 +328,7 @@ export default function TriviaIndex() {
           )}
         </div>
 
-        <div className="card glass w-96">
+        <div className="card glass w-full md:basis-1/4">
           <div className="card-body">
             <h2 className="card-title">Players</h2>
             <ul>
