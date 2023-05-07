@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 import io from "socket.io-client";
+console.log("loading socket");
 const socket = io.connect("http://localhost:4000");
 
 // const wsUrl = process.env.WEBSOCKET_API || "";
@@ -27,6 +28,9 @@ export async function loader({ request }: LoaderArgs) {
 const MIN_PLAYERS = 1;
 const COUNTDOWN_SECONDS = 5;
 const ANSWER_BUFFER = 5;
+
+const cardClass =
+  "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content";
 
 const categories = [
   {
@@ -65,6 +69,7 @@ export default function TriviaIndex() {
   const [yesterdaysWinner, setYesterdaysWinner] = useState();
   const [newGame, setNewGame] = useState();
   const [newGameError, setNewGameError] = useState();
+  const [playerScores, setPlayerScores] = useState();
   const [playerScoreError, setPlayerScoreError] = useState();
   const [selectedOption, setSelectedOption] = useState();
   const [countdownCompleted, setCountdownCompleted] = useState(false);
@@ -79,6 +84,28 @@ export default function TriviaIndex() {
     setPlayers(newPlayers);
   };
 
+  const handlePlayerScores = (newPlayerScores) => {
+    setPlayerScores(newPlayerScores);
+  };
+
+  const handlePlayAgain = () => {
+    setSignedIn(false);
+    setSelectedCategory();
+    setNewGame();
+    setNewGameError();
+    setPlayers();
+    setPlayerScores();
+    setPlayerScoreError();
+    setSelectedOption();
+    setCountdownCompleted(false);
+    setCorrectAnswer();
+  };
+
+  const handleResetGame = (msg) => {
+    console.log("msg: ", msg);
+    handlePlayAgain();
+  };
+
   useEffect(() => {
     if (!socket) {
       return;
@@ -90,9 +117,11 @@ export default function TriviaIndex() {
     socket.on("category", setSelectedCategory);
     socket.on("newGame", setNewGame);
     socket.on("newGameError", setNewGameError);
+    socket.on("playerScores", handlePlayerScores);
     socket.on("playerScoreError", setPlayerScoreError);
     socket.on("answer", setCorrectAnswer);
     socket.on("signOut", onSignOut);
+    socket.on("resetGame", handleResetGame);
   }, [socket]);
 
   useEffect(() => {
@@ -101,13 +130,17 @@ export default function TriviaIndex() {
       // Remove yourself from players list
       console.log("userData on disconnect: ", userData);
       socket.emit("signOut", userData?.email);
-      socket.off("players", setPlayers);
-      socket.off("category", setSelectedCategory);
-      socket.off("newGame", setNewGame);
-      socket.off("newGameError", setNewGameError);
-      socket.off("playerScoreError", setPlayerScoreError);
-      socket.off("answer", setCorrectAnswer);
-      socket.off("signOut", onSignOut);
+      // socket.off("players", setPlayers);
+      // socket.off("category", setSelectedCategory);
+      // socket.off("newGame", setNewGame);
+      // socket.off("newGameError", setNewGameError);
+      // socket.off("playerScores", handlePlayerScores);
+      // socket.off("playerScoreError", setPlayerScoreError);
+      // socket.off("answer", setCorrectAnswer);
+      // socket.off("signOut", onSignOut);
+      // socket.off("resetGame", handleResetGame);
+
+      socket.removeAllListeners();
     };
   }, []);
 
@@ -150,12 +183,12 @@ export default function TriviaIndex() {
 
   const StartTriviaCard = () => {
     return (
-      <div className="card w-96">
+      <div className="card prose w-96">
         <div className="card-body">
           <h2 className="card-title">Bowpourri</h2>
-          <div className="card-actions justify-end">
+          <div className="card-actions">
             <button onClick={handleSignIn} className="btn-primary btn">
-              Start!
+              Join Game!
             </button>
           </div>
         </div>
@@ -292,14 +325,14 @@ export default function TriviaIndex() {
   const unanswered = players.filter((x) => !x.answered);
 
   const PlayerStatus = ({ player }) => {
-    const { email, answered, playerData } = player;
+    const { email, answered, playerData, isCorrect } = player;
     console.log("player: ", player);
     let answerIcon;
     if (correctAnswer) {
-      const isCorrect = correctAnswer.option == selectedOption;
-      if (isCorrect) {
+      // const isCorrect = correctAnswer.option == selectedOption;
+      if (isCorrect == true) {
         answerIcon = <CheckBadgeIcon className="h-6 w-6 text-green-500" />;
-      } else {
+      } else if (isCorrect == false) {
         answerIcon = <FaceFrownIcon className="text-warning-500 h-6 w-6" />;
       }
     } else if (answered) {
@@ -312,13 +345,72 @@ export default function TriviaIndex() {
     );
   };
 
+  const PlayerScoreRow = ({ player, rank }) => {
+    console.log("rank: ", rank);
+    const { playerData, name } = player;
+    console.log("player: ", player);
+    return (
+      <tr>
+        <td>{rank}</td>
+        <td>{name}</td>
+        <td>{playerData?.score || 0}</td>
+      </tr>
+    );
+  };
+
+  const PlayerScores = () => {
+    const playerScores = players.sort((a, b) => {
+      return b.playerData?.score - a.playerData?.score;
+    });
+    return (
+      <div className={cardClass}>
+        <div className="card-body">
+          <h2 className="card-title">Winner's Circle</h2>
+          <table className="table w-full bg-neutral text-neutral-content">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {playerScores.map((player, index) => {
+                return (
+                  <PlayerScoreRow
+                    key={index}
+                    player={player}
+                    rank={index + 1}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const GameActions = () => {
+    return (
+      <div className="card mt-4 w-full bg-neutral md:basis-1/4">
+        {/* <button className="btn-secondary btn" onClick={handleSignOut}>
+          Sign Out
+        </button> */}
+
+        {playerScores && (
+          <button className="btn-primary btn" onClick={handlePlayAgain}>
+            Play Again
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container">
       <div className="flex flex-wrap justify-between">
         <div className="basis-3/4 pr-6">
-          <button className="btn-secondary btn" onClick={handleSignOut}>
-            Sign Out
-          </button>
           {!signedIn ? <StartTriviaCard /> : <StatusCard />}
           {selectedCategory ? <ShowQuestion /> : ""}
           {newGame && unanswered.length > 0 ? (
@@ -327,20 +419,23 @@ export default function TriviaIndex() {
             <ShowAnswer />
           )}
         </div>
-
-        <div className="card glass w-full md:basis-1/4">
-          <div className="card-body">
-            <h2 className="card-title">Players</h2>
-            <ul>
-              {players.map((player, index) => {
-                return (
-                  <li key={index}>
-                    <PlayerStatus player={player} />
-                  </li>
-                );
-              })}
-            </ul>
+        <div className="basis-1/4">
+          <div className={cardClass}>
+            <div className="card-body">
+              <h2 className="card-title">Players</h2>
+              <ul>
+                {players.map((player, index) => {
+                  return (
+                    <li key={index}>
+                      <PlayerStatus player={player} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
+          <PlayerScores />
+          <GameActions />
         </div>
       </div>
     </div>
