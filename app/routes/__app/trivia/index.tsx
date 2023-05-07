@@ -66,6 +66,7 @@ export default function TriviaIndex() {
   const [players, setPlayers] = useState([]);
   console.log("players: ", players);
   const [selectedCategory, setSelectedCategory] = useState();
+  const [categorySelector, setCategorySelector] = useState();
   const [yesterdaysWinner, setYesterdaysWinner] = useState();
   const [newGame, setNewGame] = useState();
   const [newGameError, setNewGameError] = useState();
@@ -109,6 +110,11 @@ export default function TriviaIndex() {
     handlePlayAgain();
   };
 
+  const handleCategory = (name, newCategory) => {
+    setCategorySelector(name);
+    setSelectedCategory(newCategory);
+  };
+
   useEffect(() => {
     if (!socket) {
       return;
@@ -117,7 +123,7 @@ export default function TriviaIndex() {
       console.log("msg: ", msg);
     });
     socket.on("players", setPlayers);
-    socket.on("category", setSelectedCategory);
+    socket.on("category", handleCategory);
     socket.on("newGame", setNewGame);
     socket.on("newGameError", setNewGameError);
     socket.on("playerScores", handlePlayerScores);
@@ -152,6 +158,7 @@ export default function TriviaIndex() {
       console.log("user: ", user);
       setUserData({
         email: user.email,
+        name: user.name,
         id: user.id,
       });
     }
@@ -177,11 +184,6 @@ export default function TriviaIndex() {
       console.log("userData: ", userData);
       socket.emit("signIn", userData);
     }
-  };
-
-  const handleSignOut = () => {
-    console.log("userData: ", userData);
-    socket.emit("signOut", userData.email);
   };
 
   const StartTriviaCard = () => {
@@ -247,10 +249,11 @@ export default function TriviaIndex() {
   const CategoryCard = ({ category }) => {
     const className = `btn btn-outline ${category.class} m-2`;
     const isDisabled = !!selectedCategory;
+    const name = userData?.name || userData?.email;
     return (
       <button
         className={className}
-        onClick={() => socket.emit("category", category.label)}
+        onClick={() => socket.emit("category", name, category.label)}
         disabled={isDisabled}
       >
         {category.label}
@@ -271,11 +274,11 @@ export default function TriviaIndex() {
         : categories;
       if (selectedCategory) {
         return (
-          <div className="card prose glass">
-            <div className="card-body">
-              <h3>Today's Category:</h3>
-              <h2>{selectedCategory}</h2>
-            </div>
+          <div className="prose">
+            <h3>
+              {categorySelector} chose {selectedCategory}
+            </h3>
+            <h2>{selectedCategory}</h2>
           </div>
         );
       }
@@ -331,7 +334,7 @@ export default function TriviaIndex() {
   const unanswered = players.filter((x) => !x.answered);
 
   const PlayerStatus = ({ player }) => {
-    const { email, answered, playerData, isCorrect } = player;
+    const { name, email, answered, playerData, isCorrect } = player;
     console.log("player: ", player);
     let answerIcon;
     if (correctAnswer) {
@@ -346,7 +349,7 @@ export default function TriviaIndex() {
     }
     return (
       <div className="flex">
-        {email} {answerIcon}
+        {name} {answerIcon}
       </div>
     );
   };
