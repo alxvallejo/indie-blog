@@ -71,6 +71,7 @@ export default function TriviaIndex() {
   const [newGameError, setNewGameError] = useState();
   const [playerScores, setPlayerScores] = useState();
   const [playerScoreError, setPlayerScoreError] = useState();
+  const [showPlayerScores, setShowPlayerScores] = useState(false);
   const [selectedOption, setSelectedOption] = useState();
   const [countdownCompleted, setCountdownCompleted] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState();
@@ -85,7 +86,9 @@ export default function TriviaIndex() {
   };
 
   const handlePlayerScores = (newPlayerScores) => {
+    console.log("newPlayerScores: ", newPlayerScores);
     setPlayerScores(newPlayerScores);
+    setShowPlayerScores(true);
   };
 
   const handlePlayAgain = () => {
@@ -197,6 +200,7 @@ export default function TriviaIndex() {
   };
 
   const handleCountdown = ({ seconds, completed }) => {
+    console.log("newGame: ", newGame);
     if ((completed || countdownCompleted) && newGame) {
       return (
         <div className="flex flex-col items-start">
@@ -267,9 +271,11 @@ export default function TriviaIndex() {
         : categories;
       if (selectedCategory) {
         return (
-          <div>
-            <h3>Today's Category:</h3>
-            <h2>{selectedCategory}</h2>
+          <div className="card prose glass">
+            <div className="card-body">
+              <h3>Today's Category:</h3>
+              <h2>{selectedCategory}</h2>
+            </div>
           </div>
         );
       }
@@ -346,9 +352,7 @@ export default function TriviaIndex() {
   };
 
   const PlayerScoreRow = ({ player, rank }) => {
-    console.log("rank: ", rank);
     const { playerData, name } = player;
-    console.log("player: ", player);
     return (
       <tr>
         <td>{rank}</td>
@@ -363,31 +367,22 @@ export default function TriviaIndex() {
       return b.playerData?.score - a.playerData?.score;
     });
     return (
-      <div className={cardClass}>
-        <div className="card-body">
-          <h2 className="card-title">Winner's Circle</h2>
-          <table className="table w-full bg-neutral text-neutral-content">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Name</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {playerScores.map((player, index) => {
-                return (
-                  <PlayerScoreRow
-                    key={index}
-                    player={player}
-                    rank={index + 1}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <table className="table w-full bg-neutral text-neutral-content">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {playerScores.map((player, index) => {
+            return (
+              <PlayerScoreRow key={index} player={player} rank={index + 1} />
+            );
+          })}
+        </tbody>
+      </table>
     );
   };
 
@@ -407,6 +402,8 @@ export default function TriviaIndex() {
     );
   };
 
+  const playerScoreModalClass = showPlayerScores ? "modal model-open" : "modal";
+
   return (
     <div className="container">
       <div className="flex flex-wrap justify-between">
@@ -422,7 +419,15 @@ export default function TriviaIndex() {
         <div className="basis-1/4">
           <div className={cardClass}>
             <div className="card-body">
-              <h2 className="card-title">Players</h2>
+              <div className="flex justify-between">
+                <h2 className="card-title">Players</h2>
+                {players.length > 0 && (
+                  <label htmlFor="my-modal" className="btn">
+                    Stats
+                  </label>
+                )}
+              </div>
+
               <ul>
                 {players.map((player, index) => {
                   return (
@@ -434,8 +439,17 @@ export default function TriviaIndex() {
               </ul>
             </div>
           </div>
-          <PlayerScores />
+
           <GameActions />
+        </div>
+      </div>
+      <input type="checkbox" id="my-modal" className="modal-toggle" />
+      <div className={playerScoreModalClass}>
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">
+            Congratulations on completing today's standup Bowpourri!
+          </h3>
+          <PlayerScores />
         </div>
       </div>
     </div>

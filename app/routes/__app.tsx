@@ -94,9 +94,9 @@ export default function Layout() {
         <div className="navbar-end">
           <div className="flex flex-1 justify-end px-2">
             <div className="flex items-center">
-              <div>{user.email}</div>
+              <div>{user.name || user.email}</div>
 
-              <div className="dropdown-end dropdown m-3">
+              <div className="dropdown dropdown-end m-3">
                 <label
                   tabIndex={0}
                   className="btn-ghost rounded-btn btn lowercase"
@@ -107,6 +107,9 @@ export default function Layout() {
                   tabIndex={0}
                   className="dropdown-content menu rounded-box mt-4 w-52 bg-base-100 p-2 "
                 >
+                  <li onClick={() => handleThemeChange("winter")}>
+                    <button className="btn-ghost btn">Winter</button>
+                  </li>
                   <li onClick={() => handleThemeChange("synthwave")}>
                     <button className="btn-ghost btn">Synthwave</button>
                   </li>

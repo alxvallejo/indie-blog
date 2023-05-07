@@ -6,6 +6,14 @@ module.exports = {
   },
   plugins: [require("@tailwindcss/typography"), require("daisyui")],
   daisyui: {
-    themes: ["synthwave", "cmyk", "emerald", "business", "dark", "cyberpunk"],
+    themes: [
+      "winter",
+      "synthwave",
+      "cmyk",
+      "emerald",
+      "business",
+      "dark",
+      "cyberpunk",
+    ],
   },
 };

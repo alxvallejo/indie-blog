@@ -1,9 +1,9 @@
 body {
-  color: hsl(0, 0%, 100%);
+  /* color: hsl(0, 0%, 100%);
   background-image: radial-gradient(
     circle,
     rgba(0, 139, 179, 1) 0%,
     rgba(0, 198, 255, 1) 35%,
     rgba(3, 72, 92, 1) 100%
-  );
+  ); */
 }
