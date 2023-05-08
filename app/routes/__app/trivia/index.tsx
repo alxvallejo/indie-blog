@@ -10,6 +10,7 @@ import {
   CheckBadgeIcon,
   FaceFrownIcon,
 } from "@heroicons/react/24/solid";
+import { categories } from "./categories";
 
 import io from "socket.io-client";
 console.log("loading socket");
@@ -30,34 +31,7 @@ const COUNTDOWN_SECONDS = 5;
 const ANSWER_BUFFER = 5;
 
 const cardClass =
-  "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content";
-
-const categories = [
-  {
-    label: "Computer Science",
-    class: "btn-info",
-  },
-  {
-    label: "History",
-    class: "btn-warning",
-  },
-  {
-    label: "Science",
-    class: "btn-secondary",
-  },
-  {
-    label: "Sports",
-    class: "btn-success",
-  },
-  {
-    label: "Entertainment",
-    class: "btn-accent",
-  },
-  {
-    label: "Current Events",
-    class: "btn-primary",
-  },
-];
+  "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
 
 export default function TriviaIndex() {
   const user = useUser();
@@ -65,6 +39,7 @@ export default function TriviaIndex() {
   const [signedIn, setSignedIn] = useState(false);
   const [players, setPlayers] = useState([]);
   console.log("players: ", players);
+  const [gameComplete, setGameComplete] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState();
   const [categorySelector, setCategorySelector] = useState();
   const [yesterdaysWinner, setYesterdaysWinner] = useState();
@@ -73,9 +48,11 @@ export default function TriviaIndex() {
   const [playerScores, setPlayerScores] = useState();
   const [playerScoreError, setPlayerScoreError] = useState();
   const [showPlayerScores, setShowPlayerScores] = useState(false);
+  const [playerStats, setPlayerStats] = useState();
   const [selectedOption, setSelectedOption] = useState();
   const [countdownCompleted, setCountdownCompleted] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState();
+  const [answerImg, setAnswerImg] = useState();
   const { wsUrl } = useLoaderData<typeof loader>();
 
   // let socket;
@@ -90,14 +67,16 @@ export default function TriviaIndex() {
     console.log("newPlayerScores: ", newPlayerScores);
     setPlayerScores(newPlayerScores);
     setShowPlayerScores(true);
+    setGameComplete(true);
   };
 
   const handlePlayAgain = () => {
     setSignedIn(false);
+    setGameComplete(false);
     setSelectedCategory();
     setNewGame();
     setNewGameError();
-    setPlayers();
+    setPlayers([]);
     setPlayerScores();
     setPlayerScoreError();
     setSelectedOption();
@@ -115,6 +94,25 @@ export default function TriviaIndex() {
     setSelectedCategory(newCategory);
   };
 
+  const handleUserScores = (userScores) => {
+    console.log("userScores: ", userScores);
+    setPlayerScores(userScores);
+  };
+
+  const handlePlayerStats = async (stats, gameFinished: boolean = false) => {
+    setPlayerStats(stats);
+    if (gameFinished) {
+      setShowPlayerScores(true);
+      setGameComplete(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!playerStats) {
+      socket.emit("playerStats");
+    }
+  }, [playerStats]);
+
   useEffect(() => {
     if (!socket) {
       return;
@@ -122,13 +120,16 @@ export default function TriviaIndex() {
     socket.on("message", (msg) => {
       console.log("msg: ", msg);
     });
+    socket.on("userScores", handleUserScores);
     socket.on("players", setPlayers);
     socket.on("category", handleCategory);
     socket.on("newGame", setNewGame);
     socket.on("newGameError", setNewGameError);
     socket.on("playerScores", handlePlayerScores);
     socket.on("playerScoreError", setPlayerScoreError);
+    socket.on("playerStats", handlePlayerStats);
     socket.on("answer", setCorrectAnswer);
+    socket.on("answerImg", setAnswerImg);
     socket.on("signOut", onSignOut);
     socket.on("resetGame", handleResetGame);
   }, [socket]);
@@ -139,6 +140,7 @@ export default function TriviaIndex() {
       // Remove yourself from players list
       console.log("userData on disconnect: ", userData);
       socket.emit("signOut", userData?.email);
+      // socket.off("userScores", handleUserScores);
       // socket.off("players", setPlayers);
       // socket.off("category", setSelectedCategory);
       // socket.off("newGame", setNewGame);
@@ -205,7 +207,7 @@ export default function TriviaIndex() {
     console.log("newGame: ", newGame);
     if ((completed || countdownCompleted) && newGame) {
       return (
-        <div className="flex flex-col items-start">
+        <div className="prose flex flex-col items-start">
           Today's question:
           <h3>{newGame.question}</h3>
           {newGame.options.map((option, i) => {
@@ -355,22 +357,25 @@ export default function TriviaIndex() {
   };
 
   const PlayerScoreRow = ({ player, rank }) => {
-    const { playerData, name } = player;
+    const { score, name } = player;
     return (
       <tr>
         <td>{rank}</td>
         <td>{name}</td>
-        <td>{playerData?.score || 0}</td>
+        <td>{score || 0}</td>
       </tr>
     );
   };
 
   const PlayerScores = () => {
-    const playerScores = players.sort((a, b) => {
-      return b.playerData?.score - a.playerData?.score;
+    if (!playerStats) {
+      return <div>No player scores yet!</div>;
+    }
+    const scores = playerStats.sort((a, b) => {
+      return b.score - a.score;
     });
     return (
-      <table className="table w-full bg-neutral text-neutral-content">
+      <table className="table w-full">
         <thead>
           <tr>
             <th></th>
@@ -379,7 +384,7 @@ export default function TriviaIndex() {
           </tr>
         </thead>
         <tbody>
-          {playerScores.map((player, index) => {
+          {scores.map((player, index) => {
             return (
               <PlayerScoreRow key={index} player={player} rank={index + 1} />
             );
@@ -396,7 +401,7 @@ export default function TriviaIndex() {
           Sign Out
         </button> */}
 
-        {playerScores && (
+        {gameComplete && (
           <button className="btn-primary btn" onClick={handlePlayAgain}>
             Play Again
           </button>
@@ -405,7 +410,7 @@ export default function TriviaIndex() {
     );
   };
 
-  const playerScoreModalClass = showPlayerScores ? "modal model-open" : "modal";
+  const playerScoreModalClass = showPlayerScores ? "modal modal-open" : "modal";
 
   return (
     <div className="container">
@@ -418,17 +423,19 @@ export default function TriviaIndex() {
           ) : (
             <ShowAnswer />
           )}
+          {answerImg && <img src={answerImg} alt="answer-img" />}
         </div>
         <div className="basis-1/4">
           <div className={cardClass}>
             <div className="card-body">
               <div className="flex justify-between">
                 <h2 className="card-title">Players</h2>
-                {players.length > 0 && (
-                  <label htmlFor="my-modal" className="btn">
-                    Stats
-                  </label>
-                )}
+                <label
+                  className="btn"
+                  onClick={() => setShowPlayerScores(true)}
+                >
+                  Stats
+                </label>
               </div>
 
               <ul>
@@ -444,14 +451,18 @@ export default function TriviaIndex() {
           </div>
 
           <GameActions />
+          {gameComplete ? <div>Game Complete</div> : ""}
         </div>
       </div>
-      <input type="checkbox" id="my-modal" className="modal-toggle" />
       <div className={playerScoreModalClass}>
-        <div className="modal-box">
-          <h3 className="text-lg font-bold">
-            Congratulations on completing today's standup Bowpourri!
-          </h3>
+        <div className="modal-box relative">
+          <label
+            className="btn-sm btn-circle btn absolute right-2 top-2"
+            onClick={() => setShowPlayerScores(false)}
+          >
+            ✕
+          </label>
+          <h3 className="text-lg font-bold">Winner's Circle</h3>
           <PlayerScores />
         </div>
       </div>

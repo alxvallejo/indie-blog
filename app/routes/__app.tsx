@@ -110,6 +110,9 @@ export default function Layout() {
                   <li onClick={() => handleThemeChange("winter")}>
                     <button className="btn-ghost btn">Winter</button>
                   </li>
+                  <li onClick={() => handleThemeChange("cupcake")}>
+                    <button className="btn-ghost btn">Cupcake</button>
+                  </li>
                   <li onClick={() => handleThemeChange("synthwave")}>
                     <button className="btn-ghost btn">Synthwave</button>
                   </li>
