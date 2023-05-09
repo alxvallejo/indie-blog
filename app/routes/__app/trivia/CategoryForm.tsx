@@ -6,20 +6,21 @@ export const CategoryForm = ({ handleSaveCategory }) => {
     <div>
       <div className="card prose w-96">
         <div className="card-body">
-          <h2>Add a category</h2>
-          <input
-            type="text"
-            placeholder="Category Name"
-            className="input-bordered input-primary input w-full max-w-xs"
-            onChange={(e) => setNewCat(e.target.value)}
-          />
-          <div className="card-actions">
-            <button
-              className="btn-primary btn"
-              onClick={() => handleSaveCategory(newCat)}
-            >
-              Save
-            </button>
+          <div className="form-control">
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="Add a category"
+                className="input-bordered input w-full max-w-xs"
+                onChange={(e) => setNewCat(e.target.value)}
+              />
+              <button
+                className="btn-primary btn"
+                onClick={() => handleSaveCategory(newCat)}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       </div>

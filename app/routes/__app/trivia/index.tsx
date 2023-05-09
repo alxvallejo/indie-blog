@@ -27,8 +27,8 @@ const ANSWER_BUFFER = 5;
 const cardClass =
   "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
 
-const tableCellBg = "bg-neutral-content";
-const tableContentColor = "text-neutral";
+const tableCellBg = "bg-base-100";
+const tableContentColor = "text-neutral-content";
 
 const tailwindColor = new TailwindColor(null);
 
@@ -442,22 +442,24 @@ export default function TriviaIndex() {
       return b.score - a.score;
     });
     return (
-      <table className={`table w-full ${tableContentColor}`}>
-        <thead>
-          <tr>
-            <th className={tableCellBg}></th>
-            <th className={tableCellBg}>Name</th>
-            <th className={tableCellBg}>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scores.map((player, index) => {
-            return (
-              <PlayerScoreRow key={index} player={player} rank={index + 1} />
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="card w-96">
+        <table className={`table-compact table w-full ${tableContentColor}`}>
+          <thead>
+            <tr>
+              <th className={tableCellBg}></th>
+              <th className={tableCellBg}>Name</th>
+              <th className={tableCellBg}>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scores.map((player, index) => {
+              return (
+                <PlayerScoreRow key={index} player={player} rank={index + 1} />
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     );
   };
 
@@ -505,9 +507,9 @@ export default function TriviaIndex() {
             {answerImg && <img src={answerImg} alt="answer-img" />}
           </div>
           <div className="basis-1/4">
-            <div className="card border-neutral bg-neutral-content text-neutral">
+            <div className="card border-accent bg-base-200 text-accent">
               <div className="card-body">
-                <div className="flex items-start justify-start">
+                <div className="flex items-start justify-start ">
                   <h2 className="card-title">Players</h2>
                   {/* <label
                     className="btn"
@@ -516,7 +518,6 @@ export default function TriviaIndex() {
                     Stats
                   </label> */}
                 </div>
-
                 <ul>
                   {players.map((player, index) => {
                     return (
@@ -546,7 +547,7 @@ export default function TriviaIndex() {
           </div>
         </div>
       </div>
-      <div className="btm-nav btm-nav-lg h-auto">
+      <div className="btm-nav btm-nav-lg h-auto p-5">
         <div>
           {!newGame && <CategoryForm handleSaveCategory={handleSaveCategory} />}
         </div>
@@ -556,7 +557,7 @@ export default function TriviaIndex() {
             console.log("yourCategory: ", yourCategory);
             return (
               <button
-                className="btn gap-2"
+                className="btn-sm btn gap-2"
                 onClick={() => socket.emit("deleteCategory", yourCategory.id)}
               >
                 {yourCategory.name}
