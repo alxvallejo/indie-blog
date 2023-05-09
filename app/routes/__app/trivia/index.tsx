@@ -9,6 +9,7 @@ import {
   CheckIcon,
   CheckBadgeIcon,
   FaceFrownIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/solid";
 import { categories } from "./categories";
 import { CategoryForm } from "./CategoryForm";
@@ -32,6 +33,9 @@ const ANSWER_BUFFER = 5;
 
 const cardClass =
   "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
+
+const tableCellBg = "bg-neutral";
+const tableContentColor = "text-accent-content";
 
 const tailwindColor = new TailwindColor(null);
 
@@ -327,7 +331,6 @@ export default function TriviaIndex() {
             })}
           </div>
           <div className="card prose text-center">
-            <h2>User Categories</h2>
             <div className="card-body">
               {Object.entries(userCategories).map(
                 ([userName, userCats], index) => {
@@ -424,9 +427,9 @@ export default function TriviaIndex() {
     const { score, name } = player;
     return (
       <tr>
-        <td>{rank}</td>
-        <td>{name}</td>
-        <td>{score || 0}</td>
+        <td className={tableCellBg}>{rank}</td>
+        <td className={tableCellBg}>{name}</td>
+        <td className={tableCellBg}>{score || 0}</td>
       </tr>
     );
   };
@@ -439,12 +442,12 @@ export default function TriviaIndex() {
       return b.score - a.score;
     });
     return (
-      <table className="table w-full">
+      <table className={`table w-full ${tableContentColor}`}>
         <thead>
           <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Score</th>
+            <th className={tableCellBg}></th>
+            <th className={tableCellBg}>Name</th>
+            <th className={tableCellBg}>Score</th>
           </tr>
         </thead>
         <tbody>
@@ -483,6 +486,8 @@ export default function TriviaIndex() {
 
   const playerScoreModalClass = showPlayerScores ? "modal modal-open" : "modal";
 
+  const yourCategories = userCategories?.[userData?.name];
+
   return (
     <>
       <div className="container mx-auto">
@@ -498,9 +503,6 @@ export default function TriviaIndex() {
               <ShowAnswer />
             )}
             {answerImg && <img src={answerImg} alt="answer-img" />}
-            {!newGame && (
-              <CategoryForm handleSaveCategory={handleSaveCategory} />
-            )}
           </div>
           <div className="basis-1/4">
             <div className={cardClass}>
@@ -544,55 +546,28 @@ export default function TriviaIndex() {
           </div>
         </div>
       </div>
-      <div className="btm-nav btm-nav-lg">
-        <button>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
-        </button>
-        <button className="active">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </button>
-        <button>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-        </button>
+      <div className="btm-nav btm-nav-lg h-auto">
+        <div>
+          {!newGame && <CategoryForm handleSaveCategory={handleSaveCategory} />}
+        </div>
+        <div>
+          <h2>Your Categories</h2>
+          {yourCategories?.map((yourCategory, i) => {
+            console.log("yourCategory: ", yourCategory);
+            return (
+              <button
+                className="btn gap-2"
+                onClick={() => socket.emit("deleteCategory", yourCategory.id)}
+              >
+                {yourCategory.name}
+                <XMarkIcon className="h-6 w-6 text-slate-500" />
+              </button>
+            );
+          })}
+        </div>
+        <div className="p-1">
+          <PlayerScores />
+        </div>
       </div>
     </>
   );
