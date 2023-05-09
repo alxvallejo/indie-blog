@@ -11,10 +11,10 @@ import {
   FaceFrownIcon,
 } from "@heroicons/react/24/solid";
 import { categories } from "./categories";
+import { CategoryForm } from "./CategoryForm";
+import TailwindColor from "../../../tailwindColor";
 
 import io from "socket.io-client";
-console.log("loading socket");
-const socket = io.connect("http://localhost:4000");
 
 // const wsUrl = process.env.WEBSOCKET_API || "";
 // const wsUrl = "wss://lionfish-app-si2ii.ondigitalocean.app";
@@ -33,6 +33,8 @@ const ANSWER_BUFFER = 5;
 const cardClass =
   "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
 
+const tailwindColor = new TailwindColor(null);
+
 export default function TriviaIndex() {
   const user = useUser();
   const [userData, setUserData] = useState();
@@ -42,6 +44,7 @@ export default function TriviaIndex() {
   const [gameComplete, setGameComplete] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState();
   const [categorySelector, setCategorySelector] = useState();
+  const [userCategories, setUserCategories] = useState([]);
   const [yesterdaysWinner, setYesterdaysWinner] = useState();
   const [newGame, setNewGame] = useState();
   const [newGameError, setNewGameError] = useState();
@@ -55,7 +58,8 @@ export default function TriviaIndex() {
   const [answerImg, setAnswerImg] = useState();
   const { wsUrl } = useLoaderData<typeof loader>();
 
-  // let socket;
+  console.log("loading socket");
+  const socket = io.connect(wsUrl);
 
   const onSignOut = (socketId) => {
     // Remove the corresponding player
@@ -90,6 +94,7 @@ export default function TriviaIndex() {
   };
 
   const handleCategory = (name, newCategory) => {
+    console.log("newCategory: ", newCategory);
     setCategorySelector(name);
     setSelectedCategory(newCategory);
   };
@@ -107,11 +112,26 @@ export default function TriviaIndex() {
     }
   };
 
+  const handleUserCategories = (cats) => {
+    const groups = cats.reduce((groups, item) => {
+      const group = groups[item.created_by] || [];
+      group.push(item);
+      groups[item.created_by] = group;
+      return groups;
+    }, {});
+    setUserCategories(groups);
+    console.log("groups: ", groups);
+  };
+
   useEffect(() => {
     if (!playerStats) {
       socket.emit("playerStats");
     }
   }, [playerStats]);
+
+  const handleNewGame = (newGame) => {
+    console.log("newGame: ", newGame);
+  };
 
   useEffect(() => {
     if (!socket) {
@@ -123,7 +143,7 @@ export default function TriviaIndex() {
     socket.on("userScores", handleUserScores);
     socket.on("players", setPlayers);
     socket.on("category", handleCategory);
-    socket.on("newGame", setNewGame);
+    socket.on("newGame", handleNewGame);
     socket.on("newGameError", setNewGameError);
     socket.on("playerScores", handlePlayerScores);
     socket.on("playerScoreError", setPlayerScoreError);
@@ -132,6 +152,7 @@ export default function TriviaIndex() {
     socket.on("answerImg", setAnswerImg);
     socket.on("signOut", onSignOut);
     socket.on("resetGame", handleResetGame);
+    socket.on("userCategories", handleUserCategories);
   }, [socket]);
 
   useEffect(() => {
@@ -191,14 +212,10 @@ export default function TriviaIndex() {
   const StartTriviaCard = () => {
     return (
       <div className="card prose w-96">
-        <div className="card-body">
-          <h2 className="card-title">Bowpourri</h2>
-          <div className="card-actions">
-            <button onClick={handleSignIn} className="btn-primary btn">
-              Join Game!
-            </button>
-          </div>
-        </div>
+        <h1>Bowpourri</h1>
+        <button onClick={handleSignIn} className="btn-primary btn">
+          Join Game!
+        </button>
       </div>
     );
   };
@@ -263,7 +280,24 @@ export default function TriviaIndex() {
     );
   };
 
-  const StatusCard = () => {
+  const UserCategoryCard = ({ categoryName, color }) => {
+    console.log("categoryName: ", categoryName);
+    const className = `btn btn-outline ${color} m-2`;
+    const isDisabled = !!selectedCategory;
+    const name = userData?.name || userData?.email;
+    console.log("name: ", name);
+    return (
+      <button
+        className={className}
+        onClick={() => socket.emit("category", name, categoryName)}
+        disabled={isDisabled}
+      >
+        {categoryName}
+      </button>
+    );
+  };
+
+  const SelectCategoryCard = () => {
     if (players.length < MIN_PLAYERS) {
       return (
         <div>
@@ -291,6 +325,36 @@ export default function TriviaIndex() {
             {filteredCategories.map((cat, i) => {
               return <CategoryCard key={i} category={cat} />;
             })}
+          </div>
+          <div className="card prose text-center">
+            <h2>User Categories</h2>
+            <div className="card-body">
+              {Object.entries(userCategories).map(
+                ([userName, userCats], index) => {
+                  const randomColor = tailwindColor.pick();
+                  return (
+                    <div
+                      className="card w-auto items-center text-center"
+                      key={index}
+                    >
+                      <div className="card-title">{userName}</div>
+                      <div className="card-body">
+                        {userCats.map((cat, i) => {
+                          return (
+                            <UserCategoryCard
+                              key={i}
+                              categoryName={cat.name}
+                              color={randomColor}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                  // return <UserCategoryCard key={i} category={cat} color="gray" />;
+                }
+              )}
+            </div>
           </div>
         </div>
       );
@@ -329,7 +393,7 @@ export default function TriviaIndex() {
         </div>
       );
     } else {
-      return "";
+      return <div />;
     }
   };
 
@@ -410,62 +474,126 @@ export default function TriviaIndex() {
     );
   };
 
+  const handleSaveCategory = async (category) => {
+    if (!userData?.name) {
+      console.log("no userData", userData);
+    }
+    socket.emit("addCategory", category, userData?.name);
+  };
+
   const playerScoreModalClass = showPlayerScores ? "modal modal-open" : "modal";
 
   return (
-    <div className="container">
-      <div className="flex flex-wrap justify-between">
-        <div className="basis-3/4 pr-6">
-          {!signedIn ? <StartTriviaCard /> : <StatusCard />}
-          {selectedCategory ? <ShowQuestion /> : ""}
-          {newGame && unanswered.length > 0 ? (
-            <div>Waiting on: {unanswered.map((p, i) => p.name).join(", ")}</div>
-          ) : (
-            <ShowAnswer />
-          )}
-          {answerImg && <img src={answerImg} alt="answer-img" />}
-        </div>
-        <div className="basis-1/4">
-          <div className={cardClass}>
-            <div className="card-body">
-              <div className="flex justify-between">
-                <h2 className="card-title">Players</h2>
-                <label
-                  className="btn"
-                  onClick={() => setShowPlayerScores(true)}
-                >
-                  Stats
-                </label>
+    <>
+      <div className="container mx-auto">
+        <div className="flex flex-wrap justify-between">
+          <div className="basis-3/4 pr-6">
+            {!signedIn ? <StartTriviaCard /> : <SelectCategoryCard />}
+            {selectedCategory ? <ShowQuestion /> : ""}
+            {newGame && unanswered.length > 0 ? (
+              <div>
+                Waiting on: {unanswered.map((p, i) => p.name).join(", ")}
               </div>
-
-              <ul>
-                {players.map((player, index) => {
-                  return (
-                    <li key={index}>
-                      <PlayerStatus player={player} />
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            ) : (
+              <ShowAnswer />
+            )}
+            {answerImg && <img src={answerImg} alt="answer-img" />}
+            {!newGame && (
+              <CategoryForm handleSaveCategory={handleSaveCategory} />
+            )}
           </div>
+          <div className="basis-1/4">
+            <div className={cardClass}>
+              <div className="card-body">
+                <div className="flex justify-between">
+                  <h2 className="card-title">Players</h2>
+                  <label
+                    className="btn"
+                    onClick={() => setShowPlayerScores(true)}
+                  >
+                    Stats
+                  </label>
+                </div>
 
-          <GameActions />
-          {gameComplete ? <div>Game Complete</div> : ""}
+                <ul>
+                  {players.map((player, index) => {
+                    return (
+                      <li key={index}>
+                        <PlayerStatus player={player} />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+
+            <GameActions />
+            {gameComplete ? <div>Game Complete</div> : ""}
+          </div>
+        </div>
+        <div className={playerScoreModalClass}>
+          <div className="modal-box relative">
+            <label
+              className="btn-sm btn-circle btn absolute right-2 top-2"
+              onClick={() => setShowPlayerScores(false)}
+            >
+              ✕
+            </label>
+            <h3 className="text-lg font-bold">Winner's Circle</h3>
+            <PlayerScores />
+          </div>
         </div>
       </div>
-      <div className={playerScoreModalClass}>
-        <div className="modal-box relative">
-          <label
-            className="btn-sm btn-circle btn absolute right-2 top-2"
-            onClick={() => setShowPlayerScores(false)}
+      <div className="btm-nav btm-nav-lg">
+        <button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            ✕
-          </label>
-          <h3 className="text-lg font-bold">Winner's Circle</h3>
-          <PlayerScores />
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+        </button>
+        <button className="active">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+        <button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+        </button>
       </div>
-    </div>
+    </>
   );
 }

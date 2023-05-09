@@ -7,8 +7,8 @@ module.exports = {
   plugins: [require("@tailwindcss/typography"), require("daisyui")],
   daisyui: {
     themes: [
-      "winter",
       "cupcake",
+      "winter",
       "synthwave",
       "cmyk",
       "emerald",
