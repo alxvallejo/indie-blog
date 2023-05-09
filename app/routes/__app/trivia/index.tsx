@@ -35,7 +35,7 @@ const cardClass =
   "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
 
 const tableCellBg = "bg-neutral";
-const tableContentColor = "text-accent-content";
+const tableContentColor = "text-neutral-content";
 
 const tailwindColor = new TailwindColor(null);
 
@@ -135,6 +135,8 @@ export default function TriviaIndex() {
 
   const handleNewGame = (newGame) => {
     console.log("newGame: ", newGame);
+    setSelectedCategory(newGame.category);
+    setNewGame(newGame);
   };
 
   useEffect(() => {
