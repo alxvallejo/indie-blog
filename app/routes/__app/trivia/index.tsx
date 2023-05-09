@@ -1,5 +1,5 @@
 import { LoaderArgs, json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useOutletContext } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { fetchNewGame } from "~/services/bowpourri";
 import { requireUserId } from "~/session.server";
@@ -21,21 +21,14 @@ import io from "socket.io-client";
 // const wsUrl = "wss://lionfish-app-si2ii.ondigitalocean.app";
 // const wsUrl = "wss://localhost:8000";
 
-export async function loader({ request }: LoaderArgs) {
-  // const userId = await requireUserId(request);
-  const wsUrl = process.env.WEBSOCKET_API || "http://localhost:4000";
-  return json({ wsUrl });
-}
-
-const MIN_PLAYERS = 1;
 const COUNTDOWN_SECONDS = 5;
 const ANSWER_BUFFER = 5;
 
 const cardClass =
   "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
 
-const tableCellBg = "bg-neutral";
-const tableContentColor = "text-neutral-content";
+const tableCellBg = "bg-neutral-content";
+const tableContentColor = "text-neutral";
 
 const tailwindColor = new TailwindColor(null);
 
@@ -60,10 +53,9 @@ export default function TriviaIndex() {
   const [countdownCompleted, setCountdownCompleted] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState();
   const [answerImg, setAnswerImg] = useState();
-  const { wsUrl } = useLoaderData<typeof loader>();
+  const [minPlayers, setMinPlayers] = useState();
 
-  console.log("loading socket");
-  const socket = io.connect(wsUrl);
+  const { socket } = useOutletContext();
 
   const onSignOut = (socketId) => {
     // Remove the corresponding player
@@ -139,6 +131,11 @@ export default function TriviaIndex() {
     setNewGame(newGame);
   };
 
+  const handleGameRules = (rules) => {
+    console.log("rules: ", rules);
+    setMinPlayers(rules?.minPlayers);
+  };
+
   useEffect(() => {
     if (!socket) {
       return;
@@ -159,6 +156,7 @@ export default function TriviaIndex() {
     socket.on("signOut", onSignOut);
     socket.on("resetGame", handleResetGame);
     socket.on("userCategories", handleUserCategories);
+    socket.on("gameRules", handleGameRules);
   }, [socket]);
 
   useEffect(() => {
@@ -304,7 +302,7 @@ export default function TriviaIndex() {
   };
 
   const SelectCategoryCard = () => {
-    if (players.length < MIN_PLAYERS) {
+    if (players.length < minPlayers) {
       return (
         <div>
           <h2>Waiting for more players...</h2>
@@ -507,16 +505,16 @@ export default function TriviaIndex() {
             {answerImg && <img src={answerImg} alt="answer-img" />}
           </div>
           <div className="basis-1/4">
-            <div className={cardClass}>
+            <div className="card border-neutral bg-neutral-content text-neutral">
               <div className="card-body">
-                <div className="flex justify-between">
+                <div className="flex items-start justify-start">
                   <h2 className="card-title">Players</h2>
-                  <label
+                  {/* <label
                     className="btn"
                     onClick={() => setShowPlayerScores(true)}
                   >
                     Stats
-                  </label>
+                  </label> */}
                 </div>
 
                 <ul>

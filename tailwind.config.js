@@ -8,6 +8,8 @@ module.exports = {
   daisyui: {
     themes: [
       "cupcake",
+      "garden",
+      "aqua",
       "winter",
       "synthwave",
       "cmyk",

@@ -7,16 +7,20 @@ import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { useUser } from "~/utils";
 import { getNoteListItems } from "~/models/note.server";
+import io from "socket.io-client";
 
 export async function loader({ request }: LoaderArgs) {
-  const userId = await requireUserId(request);
-  const noteListItems = await getNoteListItems({ userId });
-  return json({ noteListItems });
+  // const userId = await requireUserId(request);
+  // const noteListItems = await getNoteListItems({ userId });
+  const wsUrl = process.env.WEBSOCKET_API || "http://localhost:4000";
+  return json({ wsUrl });
 }
 
 export default function Layout() {
-  const data = useLoaderData<typeof loader>();
+  const { wsUrl } = useLoaderData<typeof loader>();
   const user = useUser();
+  const socket = io.connect(wsUrl);
+  console.log("LOADING SOCKET");
 
   useEffect(() => {
     themeChange(false);
@@ -107,6 +111,12 @@ export default function Layout() {
                   tabIndex={0}
                   className="dropdown-content menu rounded-box mt-4 w-52 bg-base-100 p-2 "
                 >
+                  <li onClick={() => handleThemeChange("garden")}>
+                    <button className="btn-ghost btn">Garden</button>
+                  </li>
+                  <li onClick={() => handleThemeChange("aqua")}>
+                    <button className="btn-ghost btn">Aqua</button>
+                  </li>
                   <li onClick={() => handleThemeChange("winter")}>
                     <button className="btn-ghost btn">Winter</button>
                   </li>
@@ -144,67 +154,9 @@ export default function Layout() {
       </div>
 
       <main className="flex h-full">
-        {/* <div className="h-full w-80 border-r bg-gray-50">
-          <Link to="new" className="block p-4 text-xl text-blue-500">
-            + New Note
-          </Link>
-
-          <hr />
-
-          {data.noteListItems.length === 0 ? (
-            <p className="p-4">No notes yet</p>
-          ) : (
-            <ol>
-              {data.noteListItems.map((note) => (
-                <li key={note.id}>
-                  <NavLink
-                    className={({ isActive }) =>
-                      `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
-                    }
-                    to={note.id}
-                  >
-                    📝 {note.title}
-                  </NavLink>
-                </li>
-              ))}
-            </ol>
-          )}
-        </div> */}
         <div className="w-full flex-1 p-6">
-          <Outlet />
+          <Outlet context={{ socket }} />
         </div>
-
-        {/* <div className="drawer-mobile drawer ">
-          <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
-          <div className="drawer-content flex flex-col items-center justify-center">
-            <label
-              htmlFor="my-drawer-2"
-              className="btn-primary drawer-button btn lg:hidden"
-            >
-              Open drawer
-            </label>
-            <div className="w-full flex-1 p-6">
-              <Outlet />
-            </div>
-          </div>
-          <div className="drawer-side">
-            <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
-            <ul className="menu w-80 bg-base-100 p-4 text-base-content">
-              <li>
-                <Link to="/categories">Categories</Link>
-              </li>
-              <li>
-                <Link to="/questions">Questions</Link>
-              </li>
-              <li>
-                <Link to="/notes">Notes</Link>
-              </li>
-              <li>
-                <Link to="/trivia">Trivia</Link>
-              </li>
-            </ul>
-          </div>
-        </div> */}
       </main>
     </div>
   );
