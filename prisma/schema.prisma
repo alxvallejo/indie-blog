@@ -22,9 +22,9 @@ model User {
 }
 
 model Profile {
-  id    String @id @default(cuid())
+  id   String @id @default(cuid())
   name String
-  bio String
+  bio  String
 
   score Int?
 
