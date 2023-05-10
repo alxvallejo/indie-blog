@@ -1,8 +1,6 @@
 import { LoaderArgs, json } from "@remix-run/node";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import { useState, useEffect } from "react";
-import { fetchNewGame } from "~/services/bowpourri";
-import { requireUserId } from "~/session.server";
 import { useUser } from "~/utils";
 import Countdown from "react-countdown";
 import {
@@ -15,17 +13,8 @@ import { categories } from "./categories";
 import { CategoryForm } from "./CategoryForm";
 import TailwindColor from "../../../tailwindColor";
 
-import io from "socket.io-client";
-
-// const wsUrl = process.env.WEBSOCKET_API || "";
-// const wsUrl = "wss://lionfish-app-si2ii.ondigitalocean.app";
-// const wsUrl = "wss://localhost:8000";
-
 const COUNTDOWN_SECONDS = 5;
 const ANSWER_BUFFER = 5;
-
-const cardClass =
-  "card mt-4 w-full bg-neutral md:basis-1/4 text-neutral-content cursor-pointer";
 
 const tableCellBg = "bg-base-100";
 const tableContentColor = "text-neutral-content";
