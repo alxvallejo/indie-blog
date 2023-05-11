@@ -26,7 +26,6 @@ export default function TriviaIndex() {
   const [userData, setUserData] = useState();
   const [signedIn, setSignedIn] = useState(false);
   const [players, setPlayers] = useState([]);
-  console.log("players: ", players);
   const [gameComplete, setGameComplete] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState();
   const [categorySelector, setCategorySelector] = useState();
@@ -43,6 +42,8 @@ export default function TriviaIndex() {
   const [correctAnswer, setCorrectAnswer] = useState();
   const [answerImg, setAnswerImg] = useState();
   const [minPlayers, setMinPlayers] = useState();
+  const [showOptions, setShowOptions] = useState(false);
+  const [optionMinPlayers, setOptionMinPlayers] = useState();
 
   const { socket } = useOutletContext();
 
@@ -122,7 +123,10 @@ export default function TriviaIndex() {
 
   const handleGameRules = (rules) => {
     console.log("rules: ", rules);
-    setMinPlayers(rules?.minPlayers);
+    if (rules) {
+      setMinPlayers(rules?.min_players);
+      setOptionMinPlayers(rules?.min_players);
+    }
   };
 
   useEffect(() => {
@@ -219,7 +223,9 @@ export default function TriviaIndex() {
       return (
         <div className="prose flex flex-col items-start">
           Today's question:
-          <h3>{newGame.question}</h3>
+          <h3 className="border-r-ghost p-5 text-secondary">
+            {newGame.question}
+          </h3>
           {newGame.options.map((option, i) => {
             return (
               <div className="form-control" key={i}>
@@ -258,12 +264,13 @@ export default function TriviaIndex() {
     );
   };
 
-  const CategoryCard = ({ category }) => {
+  const CategoryCard = ({ category, key }) => {
     const className = `btn btn-outline ${category.class} m-2`;
     const isDisabled = !!selectedCategory;
     const name = userData?.name || userData?.email;
     return (
       <button
+        key={key}
         className={className}
         onClick={() => socket.emit("category", name, category.label)}
         disabled={isDisabled}
@@ -273,14 +280,13 @@ export default function TriviaIndex() {
     );
   };
 
-  const UserCategoryCard = ({ categoryName, color }) => {
-    console.log("categoryName: ", categoryName);
+  const UserCategoryCard = ({ categoryName, color, key }) => {
     const className = `btn btn-outline ${color} m-2`;
     const isDisabled = !!selectedCategory;
     const name = userData?.name || userData?.email;
-    console.log("name: ", name);
     return (
       <button
+        key={key}
         className={className}
         onClick={() => socket.emit("category", name, categoryName)}
         disabled={isDisabled}
@@ -291,6 +297,9 @@ export default function TriviaIndex() {
   };
 
   const SelectCategoryCard = () => {
+    if (!minPlayers) {
+      return <div>Set min players!</div>;
+    }
     if (players.length < minPlayers) {
       return (
         <div>
@@ -326,11 +335,11 @@ export default function TriviaIndex() {
                   const randomColor = tailwindColor.pick();
                   return (
                     <div
-                      className="card w-auto items-center text-center"
+                      className="card flex-row items-start justify-start text-center"
                       key={index}
                     >
-                      <div className="card-title">{userName}</div>
-                      <div className="card-body">
+                      <div className="card-title w-0">{userName}</div>
+                      <div className="card-body flex-row items-start justify-start">
                         {userCats.map((cat, i) => {
                           return (
                             <UserCategoryCard
@@ -475,7 +484,19 @@ export default function TriviaIndex() {
     socket.emit("addCategory", category, userData?.name);
   };
 
+  const editMinPlayers = () => {
+    if (optionMinPlayers && optionMinPlayers > 0) {
+      socket.emit("editMinPlayers", optionMinPlayers);
+    }
+  };
+
+  const handleMinPlayerOptionUpdate = (e) => {
+    const newVal = e.target.value;
+    setOptionMinPlayers(newVal);
+  };
+
   const playerScoreModalClass = showPlayerScores ? "modal modal-open" : "modal";
+  const optionsModalClass = showOptions ? "modal modal-open" : "modal";
 
   const yourCategories = userCategories?.[userData?.name];
 
@@ -499,7 +520,33 @@ export default function TriviaIndex() {
             <div className="card border-accent bg-base-200 text-accent">
               <div className="card-body">
                 <div className="flex items-start justify-start ">
-                  <h2 className="card-title">Players</h2>
+                  <div className="w-100 card-title flex-1 flex-row justify-between">
+                    <h2>Players</h2>
+                    <button
+                      className="btn-sm btn-square btn"
+                      onClick={() => setShowOptions(true)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="h-6 w-6"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4.867 19.125h.008v.008h-.008v-.008z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                   {/* <label
                     className="btn"
                     onClick={() => setShowPlayerScores(true)}
@@ -535,6 +582,37 @@ export default function TriviaIndex() {
             <PlayerScores />
           </div>
         </div>
+        <div className={optionsModalClass}>
+          <div className="modal-box relative">
+            <label
+              className="btn-sm btn-circle btn absolute right-2 top-2"
+              onClick={() => setShowOptions(false)}
+            >
+              ✕
+            </label>
+            <h3 className="text-lg font-bold">Options</h3>
+            <div className="p-5">
+              <div className="form-control">
+                {minPlayers && (
+                  <input
+                    type="number"
+                    className="input-bordered input"
+                    // defaultValue={optionMinPlayers}
+                    value={optionMinPlayers}
+                    onChange={handleMinPlayerOptionUpdate}
+                  />
+                )}
+
+                <label className="label">
+                  <span className="label-text-alt">Min Players</span>
+                </label>
+              </div>
+              <div className="btn-accent btn" onClick={editMinPlayers}>
+                Save
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="btm-nav btm-nav-lg h-auto p-5">
         <div>
@@ -543,9 +621,9 @@ export default function TriviaIndex() {
         <div>
           <h2>Your Categories</h2>
           {yourCategories?.map((yourCategory, i) => {
-            console.log("yourCategory: ", yourCategory);
             return (
               <button
+                key={i}
                 className="btn-sm btn gap-2"
                 onClick={() => socket.emit("deleteCategory", yourCategory.id)}
               >

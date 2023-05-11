@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { themeChange } from "theme-change";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
@@ -9,6 +9,45 @@ import { useUser } from "~/utils";
 import { getNoteListItems } from "~/models/note.server";
 import io from "socket.io-client";
 
+const themeList = [
+  {
+    value: "garden",
+    label: "Garden",
+  },
+  {
+    value: "aqua",
+    label: "Aqua",
+  },
+  {
+    value: "winter",
+    label: "Winter",
+  },
+  {
+    value: "cupcake",
+    label: "Cupcake",
+  },
+  {
+    value: "synthwave",
+    label: "Synthwave",
+  },
+  {
+    value: "emerald",
+    label: "Emerald",
+  },
+  {
+    value: "business",
+    label: "Business",
+  },
+  {
+    value: "cmyk",
+    label: "CMYK",
+  },
+  {
+    value: "dark",
+    label: "Dark",
+  },
+];
+
 export async function loader({ request }: LoaderArgs) {
   // const userId = await requireUserId(request);
   // const noteListItems = await getNoteListItems({ userId });
@@ -18,6 +57,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export default function Layout() {
   const { wsUrl } = useLoaderData<typeof loader>();
+  const [currentTheme, setCurrentTheme] = useState("");
   const user = useUser();
   const socket = io.connect(wsUrl);
   console.log("LOADING SOCKET");
@@ -28,6 +68,7 @@ export default function Layout() {
     if (savedTheme) {
       const body = document.body;
       body.setAttribute("data-theme", savedTheme);
+      setCurrentTheme(savedTheme);
     }
   }, []);
 
@@ -35,6 +76,20 @@ export default function Layout() {
     const body = document.body;
     body.setAttribute("data-theme", theme);
     window.localStorage.setItem("theme", theme);
+    setCurrentTheme(theme);
+  };
+
+  const themeRowClass = (theme): string => {
+    const isActive = currentTheme && currentTheme === theme;
+    return isActive ? `btn-ghost btn active` : `btn-ghost btn`;
+  };
+
+  const ThemeListItem = ({ theme }) => {
+    return (
+      <li onClick={() => handleThemeChange(theme.value)}>
+        <button className={themeRowClass(theme.value)}>{theme.label}</button>
+      </li>
+    );
   };
 
   return (
@@ -111,36 +166,9 @@ export default function Layout() {
                   tabIndex={0}
                   className="dropdown-content menu rounded-box mt-4 w-52 bg-base-100 p-2 "
                 >
-                  <li onClick={() => handleThemeChange("garden")}>
-                    <button className="btn-ghost btn">Garden</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("aqua")}>
-                    <button className="btn-ghost btn">Aqua</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("winter")}>
-                    <button className="btn-ghost btn">Winter</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("cupcake")}>
-                    <button className="btn-ghost btn">Cupcake</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("synthwave")}>
-                    <button className="btn-ghost btn">Synthwave</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("emerald")}>
-                    <button className="btn-ghost btn">Emerald</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("business")}>
-                    <button className="btn-ghost btn">Business</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("cyberpunk")}>
-                    <button className="btn-ghost btn">Cyberpunk</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("cmyk")}>
-                    <button className="btn-ghost btn">CMYK</button>
-                  </li>
-                  <li onClick={() => handleThemeChange("dark")}>
-                    <button className="btn-ghost btn">Dark</button>
-                  </li>
+                  {themeList.map((theme, i) => {
+                    return <ThemeListItem key={i} theme={theme} />;
+                  })}
                 </ul>
               </div>
               <Form action="/logout" method="post">
